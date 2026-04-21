@@ -495,9 +495,9 @@ function ContactSection() {
               <ExternalLink size={18} />
               lha-engineering.fr
             </a>
-            <a href="https://lha-engineering.tech" target="_blank" rel="noreferrer" className="flex items-center gap-3 transition-colors hover:text-blue-300">
+            <a href="https://lha-engineering.fr" target="_blank" rel="noreferrer" className="flex items-center gap-3 transition-colors hover:text-blue-300">
               <ExternalLink size={18} />
-              lha-engineering.tech
+              lha-engineering.fr
             </a>
           </div>
         </div>
@@ -535,10 +535,19 @@ function ContactForm() {
         }),
       })
 
-      const payload = (await response.json()) as { ok: boolean; mode?: string; error?: string }
+      const rawPayload = await response.text()
+      let payload: { ok: boolean; mode?: string; error?: string } | null = null
 
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Impossible d’envoyer votre message pour le moment.')
+      if (rawPayload.trim().length > 0) {
+        try {
+          payload = JSON.parse(rawPayload) as { ok: boolean; mode?: string; error?: string }
+        } catch {
+          throw new Error('La reponse du serveur est invalide. Merci de reessayer.')
+        }
+      }
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Impossible d\'envoyer votre message pour le moment.')
       }
 
       setValues(initialContactForm)
@@ -679,8 +688,8 @@ function SiteFooter() {
           <a href="https://lha-engineering.fr" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors hover:text-slate-300">
             lha-engineering.fr <ExternalLink size={12} />
           </a>
-          <a href="https://lha-engineering.tech" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors hover:text-blue-400">
-            lha-engineering.tech <ExternalLink size={12} />
+          <a href="https://lha-engineering.fr" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 transition-colors hover:text-blue-400">
+            lha-engineering.fr <ExternalLink size={12} />
           </a>
         </div>
 

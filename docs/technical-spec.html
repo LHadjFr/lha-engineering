@@ -681,7 +681,7 @@
       <p>Métadonnées définies dans <code>index.html</code> :</p>
       <ul>
         <li><code>&lt;title&gt;</code>, <code>&lt;meta name="description"&gt;</code>, <code>&lt;meta name="robots"&gt;</code></li>
-        <li><code>&lt;link rel="canonical"&gt;</code> → <code>https://lha-engineering.tech</code></li>
+        <li><code>&lt;link rel="canonical"&gt;</code> → <code>https://lha-engineering.fr</code></li>
         <li><code>&lt;meta name="theme-color"&gt;</code> → <code>#f59e0b</code> (amber)</li>
         <li>Open Graph : <code>og:title</code>, <code>og:description</code>, <code>og:image</code>, <code>og:url</code></li>
         <li>Twitter Card : <code>summary_large_image</code></li>
@@ -775,7 +775,7 @@ make prod-certbot</code></pre>
       <p>Le script <code>scripts/prod-init-letsencrypt.sh</code> utilise le mode <strong>standalone</strong>
       de Certbot : il démarre un serveur HTTP temporaire sur le port 80 pour valider le domaine.
       Les certificats sont placés dans <code>deploy/letsencrypt/</code> et montés en lecture seule dans le conteneur Nginx.</p>
-      <p>Domaines couverts : <code>lha-engineering.tech</code> et <code>www.lha-engineering.tech</code>.</p>
+      <p>Domaines couverts : <code>lha-engineering.fr</code> et <code>www.lha-engineering.fr</code>.</p>
     </section>
 
     <hr class="divider" />
@@ -846,7 +846,7 @@ make prod-certbot</code></pre>
           <tr><td><code>CONTACT_MIN_SUBMIT_TIME_MS</code></td><td>4000</td><td>Délai minimal avant soumission (anti-spam)</td></tr>
           <tr><td><code>CONTACT_RATE_LIMIT_WINDOW_MS</code></td><td>600000</td><td>Fenêtre de rate limiting en ms (10 min)</td></tr>
           <tr><td><code>CONTACT_RATE_LIMIT_MAX</code></td><td>5</td><td>Nombre max de soumissions par IP par fenêtre</td></tr>
-          <tr><td><code>DOMAIN</code></td><td>lha-engineering.tech</td><td>Domaine de production (scripts et Nginx)</td></tr>
+          <tr><td><code>DOMAIN</code></td><td>lha-engineering.fr</td><td>Domaine de production (scripts et Nginx)</td></tr>
           <tr><td><code>LETSENCRYPT_EMAIL</code></td><td>—</td><td>Email pour les alertes d'expiration Let's Encrypt</td></tr>
         </tbody>
       </table>
