@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LHA Engineering — Spécification Technique</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #161b27;
+      --border: #1e2840;
+      --text: #cbd5e1;
+      --text-dim: #64748b;
+      --heading: #f1f5f9;
+      --amber: #f59e0b;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      --sans: 'Inter', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 2rem 1.5rem;
+    }
+
+    nav .logo {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 2rem;
+    }
+
+    nav ul { list-style: none; }
+    nav ul li + li { margin-top: 0.25rem; }
+
+    nav a {
+      display: block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.4rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.82rem;
+      transition: color 0.15s, background 0.15s;
+    }
+    nav a:hover { color: var(--heading); background: rgba(255,255,255,0.04); }
+
+    nav .section-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 1.25rem 0.75rem 0.5rem;
+    }
+
+    main {
+      max-width: 860px;
+      padding: 3rem 3.5rem;
+    }
+
+    /* ── Typography ── */
+    h1 { font-size: 1.9rem; font-weight: 800; color: var(--heading); margin-bottom: 0.5rem; }
+    h2 { font-size: 1.2rem; font-weight: 700; color: var(--heading); margin: 3rem 0 1rem;
+         padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 0.95rem; font-weight: 700; color: var(--heading); margin: 1.75rem 0 0.6rem; }
+    h4 { font-size: 0.85rem; font-weight: 600; color: var(--amber); margin: 1.25rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.1em; }
+
+    p { margin-bottom: 0.9rem; }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    ul, ol { padding-left: 1.4rem; margin-bottom: 0.9rem; }
+    li { margin-bottom: 0.3rem; }
+
+    strong { color: var(--heading); font-weight: 600; }
+
+    /* ── Code ── */
+    code {
+      font-family: var(--mono);
+      font-size: 0.82em;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 0.3rem;
+      padding: 0.1em 0.45em;
+      color: #a5b4fc;
+    }
+
+    pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.83rem;
+      color: #e2e8f0;
+    }
+
+    /* ── Tables ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--heading);
+      font-size: 0.75rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 0.3rem;
+      padding: 0.15em 0.55em;
+      margin-right: 0.3rem;
+    }
+    .badge-amber { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+    .badge-blue  { background: rgba(59,130,246,0.15); color: var(--blue);  border: 1px solid rgba(59,130,246,0.3); }
+    .badge-green { background: rgba(34,197,94,0.12);  color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+    .badge-red   { background: rgba(239,68,68,0.12);  color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
+
+    /* ── Cards ── */
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: var(--surface);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-weight: 700;
+      color: var(--heading);
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* ── Callouts ── */
+    .callout {
+      border-left: 3px solid var(--amber);
+      background: rgba(245,158,11,0.06);
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding: 0.85rem 1.2rem;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.88rem;
+    }
+    .callout.info { border-color: var(--blue); background: rgba(59,130,246,0.06); }
+    .callout.ok   { border-color: var(--green); background: rgba(34,197,94,0.06); }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+    /* ── Header meta ── */
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .meta span::before { content: '·'; margin-right: 0.4rem; }
+    .meta span:first-child::before { content: ''; margin: 0; }
+
+    /* ── Architecture diagram (ascii) ── */
+    .arch {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      padding: 1.5rem 2rem;
+      line-height: 1.6;
+      color: #94a3b8;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem;
+      white-space: pre;
+    }
+
+    /* ── Section anchors ── */
+    section { scroll-margin-top: 2rem; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Navigation ── -->
+  <nav>
+    <div class="logo">LHA Engineering<br>Spec Technique</div>
+
+    <div class="section-title">Vue d'ensemble</div>
+    <ul>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#objectifs">Objectifs</a></li>
+      <li><a href="#perimetre">Périmètre</a></li>
+    </ul>
+
+    <div class="section-title">Architecture</div>
+    <ul>
+      <li><a href="#archi-globale">Vue globale</a></li>
+      <li><a href="#frontend">Frontend</a></li>
+      <li><a href="#backend">Backend API</a></li>
+      <li><a href="#infrastructure">Infrastructure</a></li>
+    </ul>
+
+    <div class="section-title">Choix Techniques</div>
+    <ul>
+      <li><a href="#techno-frontend">Stack frontend</a></li>
+      <li><a href="#techno-backend">Stack backend</a></li>
+      <li><a href="#techno-infra">Conteneurisation</a></li>
+    </ul>
+
+    <div class="section-title">Fonctionnalités</div>
+    <ul>
+      <li><a href="#pages">Pages et routing</a></li>
+      <li><a href="#contact">Formulaire de contact</a></li>
+      <li><a href="#antispam">Protection anti-spam</a></li>
+      <li><a href="#seo">SEO / Social</a></li>
+    </ul>
+
+    <div class="section-title">Déploiement</div>
+    <ul>
+      <li><a href="#env-dev">Environnement dev</a></li>
+      <li><a href="#env-prod">Environnement prod</a></li>
+      <li><a href="#smtp">Configuration SMTP</a></li>
+      <li><a href="#https">HTTPS / Let's Encrypt</a></li>
+    </ul>
+
+    <div class="section-title">Référence</div>
+    <ul>
+      <li><a href="#fichiers">Arborescence</a></li>
+      <li><a href="#variables">Variables d'env</a></li>
+      <li><a href="#commandes">Commandes make</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Contenu principal ── -->
+  <main>
+
+    <h1>LHA Engineering — Spécification Technique</h1>
+    <div class="meta">
+      <span>Version 1.0</span>
+      <span>Avril 2026</span>
+      <span>Statut : <strong style="color:var(--green)">Production-ready</strong></span>
+      <span>Auteur : LHA Engineering / GitHub Copilot</span>
+    </div>
+
+    <!-- ════════════════════ INTRODUCTION ════════════════════ -->
+    <section id="intro">
+      <h2>1. Introduction</h2>
+      <p>
+        Ce document décrit l'architecture, les choix technologiques et les spécifications
+        fonctionnelles du site web de <strong>LHA Engineering</strong>.
+        Il est destiné à tout développeur reprenant le projet, intervenant sur l'infra
+        ou souhaitant comprendre les décisions prises.
+      </p>
+      <p>
+        Le site est une application React full-stack Dockerisée qui remplit trois rôles :
+        vitrine commerciale, présentation des labels de l'entreprise avec pages dédiées,
+        et formulaire de contact connecté à un backend Express avec envoi SMTP réel.
+      </p>
+    </section>
+
+    <section id="objectifs">
+      <h2>2. Objectifs</h2>
+      <ul>
+        <li>Présenter l'expertise de LHA Engineering autour de trois labels métier.</li>
+        <li>Proposer une page dédiée par label avec contenu détaillé.</li>
+        <li>Fournir un formulaire de contact fonctionnel, protégé, avec envoi SMTP ou fallback disque.</li>
+        <li>Isoler <strong>intégralement</strong> l'environnement de développement dans Docker — aucune installation Node locale requise.</li>
+        <li>Déploiement production sur serveur dédié : Nginx + TLS + Let's Encrypt.</li>
+      </ul>
+    </section>
+
+    <section id="perimetre">
+      <h2>3. Périmètre</h2>
+      <table>
+        <thead><tr><th>Élément</th><th>Inclus</th><th>Hors périmètre</th></tr></thead>
+        <tbody>
+          <tr><td>Site vitrine multi-pages</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>Formulaire de contact + API</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>Envoi email SMTP</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>Protection anti-spam légère</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>Stack dev Docker (Ubuntu 24.04)</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>Déploiement prod Docker + Nginx + HTTPS</td><td><span class="badge badge-green">✓</span></td><td></td></tr>
+          <tr><td>CMS / back-office de contenu</td><td></td><td><span class="badge badge-red">✗</span></td></tr>
+          <tr><td>Authentification utilisateur</td><td></td><td><span class="badge badge-red">✗</span></td></tr>
+          <tr><td>Base de données persistante</td><td></td><td><span class="badge badge-red">✗</span></td></tr>
+          <tr><td>Analytics intégrés</td><td></td><td><span class="badge badge-red">✗</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ════════════════════ ARCHITECTURE ════════════════════ -->
+    <section id="archi-globale">
+      <h2>4. Architecture globale</h2>
+
+      <div class="arch">
+┌──────────────────────────────────────────────────────────────┐
+│                     NAVIGATEUR (client)                       │
+│                React SPA  ·  React Router v7                  │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ HTTPS / HTTP/2
+              ┌────────────▼────────────┐
+              │     Nginx (prod)         │
+              │  reverse proxy + TLS    │
+              │  port 80 → 443          │
+              └──────┬──────────┬───────┘
+                     │ /api/*   │ /*
+         ┌───────────▼──┐   ┌───▼───────────────┐
+         │  Express API  │   │  dist/ statique    │
+         │  port 8787    │   │  (SPA + assets)    │
+         │  Node 22      │   └────────────────────┘
+         └───────────────┘
+
+  Dev : Vite dev server (port 5173) proxie /api → 127.0.0.1:8787
+        dans le même conteneur Ubuntu via concurrently</div>
+
+      <p>
+        En développement, le conteneur unique fait tourner <code>Vite</code> et
+        <code>Express</code> en parallèle via <code>concurrently</code>.
+        En production, deux images distinctes (<code>lha-engineering-api</code> et
+        <code>lha-engineering-web</code>) communiquent via un réseau Docker dédié
+        (<code>lha-engineering-net</code>).
+      </p>
+    </section>
+
+    <section id="frontend">
+      <h2>5. Frontend</h2>
+
+      <h3>Structure des composants</h3>
+      <p>Tous les composants résident dans <code>src/App.tsx</code>. La donnée métier est centralisée dans <code>src/site-data.ts</code>.</p>
+      <table>
+        <thead><tr><th>Composant</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>App</code></td><td>Racine, routeur, fonds CSS globaux</td></tr>
+          <tr><td><code>ScrollManager</code></td><td>Scroll automatique sur changement de route ou de hash</td></tr>
+          <tr><td><code>SiteHeader</code></td><td>En-tête sticky, navigation desktop/mobile, menu burger</td></tr>
+          <tr><td><code>HomePage</code></td><td>Composition de la page d'accueil</td></tr>
+          <tr><td><code>HeroSection</code></td><td>Section hero avec accroche, stats, CTA</td></tr>
+          <tr><td><code>LabelsPreview</code></td><td>Grille de cartes des 3 labels</td></tr>
+          <tr><td><code>LabelCard</code></td><td>Carte individuelle d'un label avec bouton Détails</td></tr>
+          <tr><td><code>TrustSection</code></td><td>Références, certifications, badges de confiance</td></tr>
+          <tr><td><code>ContactSection</code></td><td>Mise en page de la section contact</td></tr>
+          <tr><td><code>ContactForm</code></td><td>Formulaire contrôlé avec gestion d'état et appel API</td></tr>
+          <tr><td><code>LabelPage</code></td><td>Page dédiée par label, paramétrisée via <code>:labelId</code></td></tr>
+          <tr><td><code>SiteFooter</code></td><td>Pied de page avec logo, liens, copyright</td></tr>
+          <tr><td><code>NotFoundPage</code></td><td>Page 404</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Routing</h3>
+      <table>
+        <thead><tr><th>Route</th><th>Composant</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>/</code></td><td><code>HomePage</code></td><td>Page d'accueil complète</td></tr>
+          <tr><td><code>/labels/compliance</code></td><td><code>LabelPage</code></td><td>Label LHA Compliance &amp; Process</td></tr>
+          <tr><td><code>/labels/craftsmanship</code></td><td><code>LabelPage</code></td><td>Label LHA Software Craftsmanship</td></tr>
+          <tr><td><code>/labels/dev-labs</code></td><td><code>LabelPage</code></td><td>Label LHA Dev Labs</td></tr>
+          <tr><td><code>/*</code></td><td><code>NotFoundPage</code></td><td>404 catch-all</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Design system</h3>
+      <p>
+        Le design est industriel sombre (<em>dark mode</em> exclusif).
+        Deux accents colorés structurent les contenus :
+        <span class="badge badge-amber">Amber</span> pour le label Compliance,
+        <span class="badge badge-blue">Blue</span> pour Craftsmanship et Dev Labs.
+      </p>
+      <ul>
+        <li>Fond : <code>#020617</code> (slate-950) + dégradé radial bleu/amber en arrière-plan fixe.</li>
+        <li>Grille de fond : lignes subtiles via <code>linear-gradient</code> masquées par un radial-gradient.</li>
+        <li>Glassmorphisme : <code>backdrop-blur-xl</code> + <code>bg-opacity</code> sur les cartes et l'en-tête.</li>
+        <li>Typographie : <a href="https://fonts.google.com/specimen/Inter">Inter</a> (Google Fonts), chargée dans <code>src/index.css</code>.</li>
+        <li>Icônes : <a href="https://lucide.dev">Lucide React</a> 0.468.</li>
+      </ul>
+    </section>
+
+    <section id="backend">
+      <h2>6. Backend API</h2>
+      <p>Fichier unique : <code>server/index.mjs</code>. Framework : Express 4. Runtime : Node 22 ESM.</p>
+
+      <h3>Endpoints</h3>
+      <table>
+        <thead><tr><th>Méthode</th><th>Route</th><th>Description</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/health</code></td><td>Healthcheck — retourne <code>{"ok":true}</code></td><td>Aucune</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/contact</code></td><td>Soumission du formulaire de contact</td><td>Aucune</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Schéma de la requête <code>POST /api/contact</code></h3>
+      <pre><code>{
+  "name":          string  // requis, non vide
+  "email":         string  // requis, format email valide
+  "company":       string  // optionnel
+  "subject":       string  // requis, non vide
+  "message":       string  // requis, non vide
+  "website":       string  // champ honeypot — doit être vide
+  "formStartedAt": number  // timestamp ms côté client — doit être ≥ 4 000 ms avant la soumission
+}</code></pre>
+
+      <h3>Comportement d'envoi</h3>
+      <ul>
+        <li>Si <code>SMTP_HOST</code> est défini et différent de <code>smtp.example.com</code>, <strong>et</strong> que <code>SMTP_FROM</code> et <code>CONTACT_TO</code> sont renseignés → envoi SMTP via Nodemailer → réponse <code>{"ok":true,"mode":"email"}</code>.</li>
+        <li>Sinon → stockage JSON dans <code>server/submissions/&lt;timestamp&gt;-&lt;slug-nom&gt;.json</code> → réponse <code>{"ok":true,"mode":"stored"}</code>.</li>
+      </ul>
+
+      <h3>Format du fichier de soumission stocké</h3>
+      <pre><code>{
+  "name": "Prénom Nom",
+  "email": "expediteur@exemple.fr",
+  "company": "Nom société",
+  "subject": "Sujet du message",
+  "message": "Corps du message",
+  "receivedAt": "2026-04-20T14:18:50.829Z",
+  "requesterIp": "127.0.0.1"
+}</code></pre>
+    </section>
+
+    <section id="infrastructure">
+      <h2>7. Infrastructure Docker</h2>
+      <table>
+        <thead><tr><th>Image</th><th>Base</th><th>Rôle</th><th>Ports exposés</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>lha-engineering-dev</code></td>
+            <td><code>ubuntu:24.04</code> + NodeSource Node 22</td>
+            <td>Développement — Vite HMR + Express en watch mode</td>
+            <td>5173</td>
+          </tr>
+          <tr>
+            <td><code>lha-engineering-api</code></td>
+            <td><code>node:22-bookworm-slim</code></td>
+            <td>API production (dépendances runtime only)</td>
+            <td>8787 (interne)</td>
+          </tr>
+          <tr>
+            <td><code>lha-engineering-web</code></td>
+            <td>Build : <code>node:22-bookworm-slim</code> → Runtime : <code>nginx:1.27-alpine</code></td>
+            <td>Build frontend + reverse proxy Nginx + TLS</td>
+            <td>80, 443</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>Réseau production</h4>
+      <p>Un réseau bridge Docker nommé <code>lha-engineering-net</code> est créé automatiquement par <code>scripts/prod-up.sh</code>. Les deux conteneurs prod y sont attachés. Nginx résout <code>lha-engineering-api</code> par son nom de conteneur via l'upstream Nginx.</p>
+
+      <div class="callout info">
+        <strong>Note :</strong> En développement, le code source est monté en volume (<code>--volume $(PWD):/app</code>).
+        Les <code>node_modules</code> sont dans un volume nommé séparé (<code>lha_node_modules</code>) pour éviter
+        les conflits avec l'hôte Linux.
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ════════════════════ CHOIX TECHNIQUES ════════════════════ -->
+    <section id="techno-frontend">
+      <h2>8. Stack Frontend — Justification des choix</h2>
+
+      <div class="card">
+        <div class="card-title">React 19 + TypeScript</div>
+        <p>Framework UI déclaratif. TypeScript pour la sûreté des types à l'échelle du projet.
+        React 19 est la dernière version stable, compatible avec Vite 8 et React Router 7.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Vite 8</div>
+        <p>Bundler de développement ultra-rapide avec HMR natif. En production, génère un bundle optimisé avec tree-shaking.
+        Configuré avec <code>usePolling: true</code> pour la compatibilité inotify/Docker volumes.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tailwind CSS v4</div>
+        <p>Utilisation via le plugin Vite officiel (<code>@tailwindcss/vite</code>), sans <code>tailwind.config.js</code>.
+        Configuration par import CSS direct dans <code>src/index.css</code>. Choix justifié par la vitesse de prototypage
+        d'un UI complexe sans CSS custom.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">React Router v7</div>
+        <p>Routing côté client pour les pages dédiées par label (<code>/labels/:labelId</code>).
+        Gestion du scroll restauré via <code>ScrollManager</code> (hook <code>useLocation</code> + <code>useEffect</code>).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Lucide React 0.468</div>
+        <p>Bibliothèque d'icônes SVG légère, tree-shakable. Utilisée pour les icônes de navigation,
+        de service et du formulaire.</p>
+      </div>
+    </section>
+
+    <section id="techno-backend">
+      <h2>9. Stack Backend — Justification des choix</h2>
+
+      <div class="card">
+        <div class="card-title">Node.js 22 ESM (<code>.mjs</code>)</div>
+        <p>Runtime JavaScript serveur. Fichier unique <code>server/index.mjs</code> — pas de build nécessaire.
+        ESM natif pour cohérence avec le reste du projet (<code>"type": "module"</code> dans <code>package.json</code>).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Express 4</div>
+        <p>Framework HTTP minimaliste. Justifié par la simplicité du besoin (2 routes).
+        <code>app.set('trust proxy', true)</code> pour lire correctement l'IP réelle derrière Nginx.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nodemailer 6</div>
+        <p>Envoi SMTP standard. Aucune dépendance propriétaire. Compatible avec tout fournisseur SMTP
+        (Gandi, OVH, Brevo, SendGrid…). L'objet <code>transporter</code> est créé à chaque envoi
+        pour éviter les connexions persistantes en contexte serverless-like.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Concurrently</div>
+        <p>Lance Vite et l'API Express en parallèle dans le même conteneur dev avec
+        <code>npm run dev</code> → <code>concurrently -k "npm:dev:api" "npm:dev:web"</code>.</p>
+      </div>
+    </section>
+
+    <section id="techno-infra">
+      <h2>10. Conteneurisation — Justification des choix</h2>
+
+      <div class="card">
+        <div class="card-title">Ubuntu 24.04 pour le dev (Dockerfile.dev)</div>
+        <p>Choix explicite du client : l'environnement de dev doit ressembler à un Ubuntu complet
+        pour faciliter les interventions manuelles (<code>make shell</code>).
+        Node 22 est installé via NodeSource pour contrôler précisément la version.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">node:22-bookworm-slim pour la prod API</div>
+        <p>Image Debian Slim officielle : légère, sécurisée, compatible production. Seules les dépendances
+        runtime (<code>npm install --omit=dev</code>) sont installées.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Build multi-stage pour l'image web</div>
+        <p>Stage 1 (<code>node:22-bookworm-slim</code>) : build React → <code>dist/</code>.
+        Stage 2 (<code>nginx:1.27-alpine</code>) : copie du dist uniquement, aucune dépendance Node dans l'image finale.
+        Résultat : image finale légère (~40 Mo).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Docker pur (pas de Compose)</div>
+        <p>Contrainte explicite du client. Toute l'orchestration est gérée via des scripts shell
+        (<code>scripts/prod-up.sh</code>, <code>prod-down.sh</code>) et un <code>Makefile</code>.</p>
+      </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ════════════════════ FONCTIONNALITÉS ════════════════════ -->
+    <section id="pages">
+      <h2>11. Pages et navigation</h2>
+      <p>La navigation principale est assurée par <code>SiteHeader</code> via des liens hash
+      (<code>/#expertise</code>, <code>/#labels</code>, <code>/#contact</code>) qui scroll
+      automatiquement grâce au composant <code>ScrollManager</code>.</p>
+      <p>Chaque label dispose d'une page dédiée accessible depuis le bouton "Détails" de chaque carte.
+      La donnée est centralisée dans <code>src/site-data.ts</code> et partagée entre la carte
+      d'accueil et la page dédiée.</p>
+    </section>
+
+    <section id="contact">
+      <h2>12. Formulaire de contact</h2>
+      <p>Composant <code>ContactForm</code> dans <code>src/App.tsx</code>. État local contrôlé via <code>useState</code>.</p>
+      <h3>Champs</h3>
+      <table>
+        <thead><tr><th>Champ</th><th>Type HTML</th><th>Requis</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>Nom</td><td>text</td><td>Oui</td><td>Identité du contact</td></tr>
+          <tr><td>Email</td><td>email</td><td>Oui</td><td>Adresse de réponse (ReplyTo)</td></tr>
+          <tr><td>Société</td><td>text</td><td>Non</td><td>Contexte professionnel</td></tr>
+          <tr><td>Sujet</td><td>text</td><td>Oui</td><td>Objet de la demande</td></tr>
+          <tr><td>Message</td><td>textarea</td><td>Oui</td><td>Corps de la demande</td></tr>
+          <tr><td>website</td><td>text (caché)</td><td>—</td><td>Honeypot anti-spam</td></tr>
+          <tr><td>formStartedAt</td><td>(hidden via state)</td><td>—</td><td>Timestamp de chargement</td></tr>
+        </tbody>
+      </table>
+      <h3>États du formulaire</h3>
+      <ul>
+        <li><code>idle</code> : état initial</li>
+        <li><code>submitting</code> : en attente de réponse API</li>
+        <li><code>success</code> : soumission acceptée</li>
+        <li><code>error</code> : erreur réseau ou validation API</li>
+      </ul>
+    </section>
+
+    <section id="antispam">
+      <h2>13. Protection anti-spam</h2>
+      <p>Trois couches complémentaires, sans CAPTCHA ni dépendance externe :</p>
+      <table>
+        <thead><tr><th>Mécanisme</th><th>Où</th><th>Fonctionnement</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Honeypot</td>
+            <td>Frontend + API</td>
+            <td>Champ <code>website</code> masqué CSS + <code>tabIndex="-1"</code>. Si rempli (bots) → rejet 400.</td>
+          </tr>
+          <tr>
+            <td>Délai minimal</td>
+            <td>Frontend + API</td>
+            <td>Timestamp <code>formStartedAt</code> enregistré au montage du composant. Si la soumission arrive moins de <code>CONTACT_MIN_SUBMIT_TIME_MS</code> (défaut 4 000 ms) après le chargement → rejet 400.</td>
+          </tr>
+          <tr>
+            <td>Rate limiting IP</td>
+            <td>API</td>
+            <td>Map en mémoire. Maximum <code>CONTACT_RATE_LIMIT_MAX</code> (défaut 5) requêtes par IP dans une fenêtre de <code>CONTACT_RATE_LIMIT_WINDOW_MS</code> (défaut 10 min). Au-delà → rejet 429.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>Limitation connue :</strong> Le rate limiting est en mémoire processus.
+        Il est réinitialisé au redémarrage du conteneur. Pour une protection plus robuste
+        sur plusieurs instances, remplacer la <code>Map</code> par Redis.
+      </div>
+    </section>
+
+    <section id="seo">
+      <h2>14. SEO &amp; Social</h2>
+      <p>Métadonnées définies dans <code>index.html</code> :</p>
+      <ul>
+        <li><code>&lt;title&gt;</code>, <code>&lt;meta name="description"&gt;</code>, <code>&lt;meta name="robots"&gt;</code></li>
+        <li><code>&lt;link rel="canonical"&gt;</code> → <code>https://lha-engineering.tech</code></li>
+        <li><code>&lt;meta name="theme-color"&gt;</code> → <code>#f59e0b</code> (amber)</li>
+        <li>Open Graph : <code>og:title</code>, <code>og:description</code>, <code>og:image</code>, <code>og:url</code></li>
+        <li>Twitter Card : <code>summary_large_image</code></li>
+        <li>Favicon : <code>public/favicon.png</code> (généré depuis le logo via ImageMagick)</li>
+        <li>OG image : <code>public/og-image.png</code> (1200×630, généré depuis le logo)</li>
+      </ul>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ════════════════════ DÉPLOIEMENT ════════════════════ -->
+    <section id="env-dev">
+      <h2>15. Environnement de développement</h2>
+      <pre><code># Démarrer le serveur de dev (interactif)
+make dev
+
+# Démarrer en arrière-plan
+make dev-d
+
+# Ouvrir un shell dans le conteneur
+make shell
+
+# Arrêter
+make stop</code></pre>
+      <p>
+        Vite écoute sur <code>http://localhost:5173</code>.<br />
+        L'API Express écoute sur <code>http://127.0.0.1:8787</code> (interne au conteneur).<br />
+        Vite proxie <code>/api/*</code> → <code>http://127.0.0.1:8787</code>.
+      </p>
+      <div class="callout info">
+        Après toute modification de <code>Dockerfile.dev</code> ou <code>package.json</code>,
+        utiliser <code>make rebuild</code> pour reconstruire l'image sans cache.
+      </div>
+    </section>
+
+    <section id="env-prod">
+      <h2>16. Environnement de production</h2>
+      <pre><code># Copier et renseigner le fichier d'environnement
+cp .env.example .env
+# (éditer .env avec les vraies valeurs SMTP, DOMAIN, etc.)
+
+# Optionnel : générer un certificat Let's Encrypt (domaine accessible publiquement requis)
+make prod-certbot
+
+# Démarrer la stack (génère un certificat auto-signé si Let's Encrypt absent)
+make prod-up
+
+# Vérifier
+curl -k https://127.0.0.1/api/health
+
+# Arrêter
+make prod-down</code></pre>
+      <div class="callout ok">
+        <strong>Auto-signé en local :</strong> Si aucun certificat Let's Encrypt n'est présent,
+        <code>scripts/prod-up.sh</code> génère automatiquement un certificat auto-signé via
+        <code>alpine:3.20</code> + <code>openssl</code>.
+        Ce certificat est suffisant pour tester la stack en local mais ne doit pas être utilisé en production publique.
+      </div>
+    </section>
+
+    <section id="smtp">
+      <h2>17. Configuration SMTP (Gandi)</h2>
+      <p>Valeurs à renseigner dans <code>.env</code> pour le provider Gandi :</p>
+      <pre><code>SMTP_HOST=mail.gandi.net
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=contact@votre-domaine.tld
+SMTP_PASSWORD=mot_de_passe_boite_mail
+SMTP_FROM=LHA Engineering &lt;contact@votre-domaine.tld&gt;
+CONTACT_TO=contact@votre-domaine.tld</code></pre>
+      <p>Alternative SMTPS (TLS immédiat) :</p>
+      <pre><code>SMTP_PORT=465
+SMTP_SECURE=true</code></pre>
+      <h3>Décision de la logique d'envoi</h3>
+      <p>La fonction <code>isMailTransportConfigured()</code> dans <code>server/index.mjs</code> active
+      l'envoi SMTP uniquement si :</p>
+      <ul>
+        <li><code>SMTP_HOST</code> est défini et différent de <code>smtp.example.com</code></li>
+        <li><code>SMTP_FROM</code> est renseigné</li>
+        <li><code>CONTACT_TO</code> est renseigné</li>
+      </ul>
+      <p>Sinon, fallback automatique sur le stockage JSON dans <code>server/submissions/</code>.</p>
+    </section>
+
+    <section id="https">
+      <h2>18. HTTPS &amp; Let's Encrypt</h2>
+      <pre><code># Pré-requis : le domaine doit pointer sur le serveur (DNS A/AAAA configuré)
+# et le port 80 doit être accessible publiquement.
+
+make prod-certbot</code></pre>
+      <p>Le script <code>scripts/prod-init-letsencrypt.sh</code> utilise le mode <strong>standalone</strong>
+      de Certbot : il démarre un serveur HTTP temporaire sur le port 80 pour valider le domaine.
+      Les certificats sont placés dans <code>deploy/letsencrypt/</code> et montés en lecture seule dans le conteneur Nginx.</p>
+      <p>Domaines couverts : <code>lha-engineering.tech</code> et <code>www.lha-engineering.tech</code>.</p>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- ════════════════════ RÉFÉRENCE ════════════════════ -->
+    <section id="fichiers">
+      <h2>19. Arborescence du projet</h2>
+      <pre><code>LHA-Engineering/
+├── Dockerfile.dev           # Image dev Ubuntu 24.04 + Node 22
+├── Dockerfile.api           # Image prod API (node:22-bookworm-slim)
+├── Dockerfile.web           # Image prod Web (build node + runtime nginx:alpine)
+├── Makefile                 # Toutes les commandes du projet
+├── run.sh                   # Alternative shell au Makefile
+├── package.json             # Dépendances npm + scripts
+├── vite.config.ts           # Config Vite (proxy /api, HMR Docker)
+├── tsconfig*.json           # Configs TypeScript
+├── eslint.config.js         # Config ESLint flat
+├── index.html               # Shell SPA + SEO/social metadata
+├── .env.example             # Modèle de configuration d'environnement
+├── .gitignore
+├── .dockerignore
+│
+├── src/
+│   ├── App.tsx              # Tous les composants React + routing
+│   ├── site-data.ts         # Données métier (labels, références, certifications)
+│   ├── main.tsx             # Point d'entrée React (BrowserRouter)
+│   ├── index.css            # Tailwind v4 import + Google Fonts
+│   └── vite-env.d.ts        # Déclarations de types assets Vite
+│
+├── server/
+│   ├── index.mjs            # API Express (health + contact)
+│   └── submissions/         # Fichiers JSON (fallback sans SMTP)
+│
+├── public/
+│   ├── lha-logo.webp        # Logo optimisé (WebP)
+│   ├── favicon.png          # Favicon généré depuis le logo
+│   └── og-image.png         # Image Open Graph (1200×630)
+│
+├── deploy/
+│   ├── nginx/
+│   │   └── default.conf     # Config Nginx (TLS, proxy /api, SPA fallback)
+│   ├── letsencrypt/         # Certificats Let's Encrypt (gitignored)
+│   └── certbot/             # Répertoire challenge ACME
+│
+├── scripts/
+│   ├── prod-build.sh        # Build images de production
+│   ├── prod-up.sh           # Démarrage stack prod (+ cert auto-signé si besoin)
+│   ├── prod-down.sh         # Arrêt stack prod
+│   └── prod-init-letsencrypt.sh  # Génération certificat Let's Encrypt
+│
+└── docs/
+    └── technical-spec.html  # Ce document</code></pre>
+    </section>
+
+    <section id="variables">
+      <h2>20. Variables d'environnement</h2>
+      <table>
+        <thead><tr><th>Variable</th><th>Défaut</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>API_PORT</code></td><td>8787</td><td>Port d'écoute de l'API Express</td></tr>
+          <tr><td><code>CONTACT_TO</code></td><td>—</td><td>Adresse email de réception des formulaires</td></tr>
+          <tr><td><code>SMTP_HOST</code></td><td>—</td><td>Serveur SMTP sortant (<code>mail.gandi.net</code> pour Gandi)</td></tr>
+          <tr><td><code>SMTP_PORT</code></td><td>587</td><td>Port SMTP (<code>587</code> STARTTLS ou <code>465</code> TLS)</td></tr>
+          <tr><td><code>SMTP_SECURE</code></td><td>false</td><td><code>true</code> pour TLS immédiat (port 465), <code>false</code> pour STARTTLS (port 587)</td></tr>
+          <tr><td><code>SMTP_USER</code></td><td>—</td><td>Identifiant SMTP (adresse email complète)</td></tr>
+          <tr><td><code>SMTP_PASSWORD</code></td><td>—</td><td>Mot de passe SMTP</td></tr>
+          <tr><td><code>SMTP_FROM</code></td><td>—</td><td>Adresse expéditrice affichée (<code>Nom &lt;adresse&gt;</code>)</td></tr>
+          <tr><td><code>CONTACT_MIN_SUBMIT_TIME_MS</code></td><td>4000</td><td>Délai minimal avant soumission (anti-spam)</td></tr>
+          <tr><td><code>CONTACT_RATE_LIMIT_WINDOW_MS</code></td><td>600000</td><td>Fenêtre de rate limiting en ms (10 min)</td></tr>
+          <tr><td><code>CONTACT_RATE_LIMIT_MAX</code></td><td>5</td><td>Nombre max de soumissions par IP par fenêtre</td></tr>
+          <tr><td><code>DOMAIN</code></td><td>lha-engineering.tech</td><td>Domaine de production (scripts et Nginx)</td></tr>
+          <tr><td><code>LETSENCRYPT_EMAIL</code></td><td>—</td><td>Email pour les alertes d'expiration Let's Encrypt</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="commandes">
+      <h2>21. Référence des commandes <code>make</code></h2>
+      <table>
+        <thead><tr><th>Commande</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><code>make dev</code></td><td>Build image dev puis lance Vite + API (interactif)</td></tr>
+          <tr><td><code>make dev-d</code></td><td>Idem en arrière-plan</td></tr>
+          <tr><td><code>make stop</code></td><td>Arrête le conteneur dev</td></tr>
+          <tr><td><code>make shell</code></td><td>Shell interactif dans le conteneur dev</td></tr>
+          <tr><td><code>make add PKG=x</code></td><td>Installe un paquet npm runtime</td></tr>
+          <tr><td><code>make add-dev PKG=x</code></td><td>Installe un paquet npm de dev</td></tr>
+          <tr><td><code>make build-prod</code></td><td>Build frontend dans <code>dist/</code></td></tr>
+          <tr><td><code>make lint</code></td><td>ESLint sur le projet</td></tr>
+          <tr><td><code>make rebuild</code></td><td>Rebuild image dev sans cache</td></tr>
+          <tr><td><code>make clean</code></td><td>Supprime conteneur, volume et image dev</td></tr>
+          <tr><td><code>make prod-build</code></td><td>Build images API et Web de production</td></tr>
+          <tr><td><code>make prod-up</code></td><td>Démarre la stack production (avec cert auto-signé si besoin)</td></tr>
+          <tr><td><code>make prod-down</code></td><td>Arrête la stack production</td></tr>
+          <tr><td><code>make prod-logs</code></td><td>Logs Nginx en temps réel</td></tr>
+          <tr><td><code>make prod-certbot</code></td><td>Génère les certificats Let's Encrypt</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="divider" />
+    <p style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding-bottom:2rem;">
+      LHA Engineering · Document technique généré le 20 avril 2026
+    </p>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Dépendances Node (gérées par le volume Docker)
+node_modules/
+
+# Build de production
+dist/
+
+# Variables d'environnement
+.env
+.env.*
+!.env.example
+
+# Submissions locales du formulaire et certificats Let's Encrypt
+server/submissions/
+deploy/letsencrypt/
+deploy/certbot/www/
+
+# Exclure les fichiers de conteneurisation (repo sans Docker)
+Dockerfile*
+.dockerignore
+deploy/
+run.sh
+scripts/prod-*.sh
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
