@@ -14,7 +14,7 @@ import {
 import { Link, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { certifications, labels, references, type Label, type LabelAccent, type LabelIcon } from './site-data'
 
-const logo = '/lha-logo.webp'
+const logo = '/LHA-ENGINEERING Binary.png'
 
 const iconMap = {
   shield: ShieldCheck,
