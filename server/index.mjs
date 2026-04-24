@@ -157,6 +157,8 @@ async function sendEmail(payload) {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
     secure: process.env.SMTP_SECURE === 'true',
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
     auth:
       process.env.SMTP_USER && process.env.SMTP_PASSWORD
         ? {
