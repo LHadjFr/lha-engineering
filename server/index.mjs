@@ -1,14 +1,19 @@
 import express from 'express'
 import nodemailer from 'nodemailer'
+import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const projectRootDir = path.resolve(__dirname, '..')
 const submissionsDir = path.join(__dirname, 'submissions')
+const distDir = path.join(projectRootDir, 'dist')
+const distIndexPath = path.join(distDir, 'index.html')
+const canServeFrontend = existsSync(distIndexPath)
 const app = express()
-const port = Number(process.env.API_PORT || 8787)
+const port = Number(process.env.PORT || process.env.API_PORT || 8787)
 const minSubmitTimeMs = Number(process.env.CONTACT_MIN_SUBMIT_TIME_MS || 4000)
 const rateLimitWindowMs = Number(process.env.CONTACT_RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000)
 const rateLimitMax = Number(process.env.CONTACT_RATE_LIMIT_MAX || 5)
@@ -82,6 +87,18 @@ app.post('/api/contact', async (req, res) => {
     })
   }
 })
+
+if (canServeFrontend) {
+  app.use(express.static(distDir))
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+      return next()
+    }
+
+    return res.sendFile(distIndexPath)
+  })
+}
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`LHA contact API listening on http://0.0.0.0:${port}`)

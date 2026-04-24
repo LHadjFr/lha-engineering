@@ -535,6 +535,7 @@ function ContactForm() {
         }),
       })
 
+      const contentType = response.headers.get('content-type') ?? ''
       const rawPayload = await response.text()
       let payload: { ok: boolean; mode?: string; error?: string } | null = null
 
@@ -542,6 +543,10 @@ function ContactForm() {
         try {
           payload = JSON.parse(rawPayload) as { ok: boolean; mode?: string; error?: string }
         } catch {
+          if (contentType.includes('text/html')) {
+            throw new Error('L\'API de contact n\'est pas disponible sur ce déploiement.')
+          }
+
           throw new Error('La reponse du serveur est invalide. Merci de reessayer.')
         }
       }

@@ -38,6 +38,8 @@ Le projet inclut maintenant :
 - Sans configuration SMTP, l'API enregistre les messages dans `server/submissions/`.
 - En production, définis les variables SMTP dans `.env` pour activer l'envoi d'email.
 - Protection anti-spam légère activée : honeypot, délai minimal de soumission et rate limit mémoire côté API.
+- Sur Railway, le service doit lancer `npm start` après `npm run build` pour servir à la fois le frontend compilé et l'API Express sur le même domaine.
+- Le healthcheck de déploiement doit cibler `/api/health`.
 
 Fichier d'environnement :
 
