@@ -3,6 +3,7 @@
 IMAGE     = lha-engineering-dev
 CONTAINER = lha-engineering-dev
 VOLUME    = lha_node_modules
+ENV_FILE  = $(if $(wildcard .env),.env,.env.example)
 
 ## ── Image ───────────────────────────────────────────────────────────────────
 # Construire l'image Docker de développement
@@ -14,6 +15,7 @@ build:
 dev: build
 	docker run --rm -it \
 	  --name $(CONTAINER) \
+	  --env-file $(ENV_FILE) \
 	  -p 5173:5173 \
 	  -v $(PWD):/app \
 	  -v $(VOLUME):/app/node_modules \
@@ -23,6 +25,7 @@ dev: build
 dev-d: build
 	docker run --rm -d \
 	  --name $(CONTAINER) \
+	  --env-file $(ENV_FILE) \
 	  -p 5173:5173 \
 	  -v $(PWD):/app \
 	  -v $(VOLUME):/app/node_modules \

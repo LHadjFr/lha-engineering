@@ -280,6 +280,11 @@
       <li><a href="#https">HTTPS / Let's Encrypt</a></li>
     </ul>
 
+    <div class="section-title">Incidents</div>
+    <ul>
+      <li><a href="#incidents">Points bloquants</a></li>
+    </ul>
+
     <div class="section-title">Référence</div>
     <ul>
       <li><a href="#fichiers">Arborescence</a></li>
@@ -293,7 +298,7 @@
 
     <h1>LHA Engineering — Spécification Technique</h1>
     <div class="meta">
-      <span>Version 1.0</span>
+      <span>Version 1.1</span>
       <span>Avril 2026</span>
       <span>Statut : <strong style="color:var(--green)">Production-ready</strong></span>
       <span>Auteur : LHA Engineering / GitHub Copilot</span>
@@ -778,11 +783,84 @@ make prod-certbot</code></pre>
       <p>Domaines couverts : <code>lha-engineering.fr</code> et <code>www.lha-engineering.fr</code>.</p>
     </section>
 
+    <!-- ════════════════════ INCIDENTS ════════════════════ -->
+    <section id="incidents">
+      <h2>19. Points bloquants rencontrés</h2>
+      <p>Cette section documente les incidents et éléments bloquants identifiés lors du développement et du déploiement, afin d'orienter rapidement tout développeur qui reprendrait le projet.</p>
+
+      <h3>19.1 SMTP sortant bloqué sur Railway (2026-04-24)</h3>
+      <div class="callout" style="border-color:var(--red);background:rgba(239,68,68,0.06)">
+        <strong>Statut : non résolu sur Railway</strong> — comportement inhérent à la plateforme, indépendant de la configuration SMTP.
+      </div>
+      <h4>Symptôme</h4>
+      <p>
+        Le formulaire de contact (<code>POST /api/contact</code>) est fonctionnel côté validation mais retourne systématiquement
+        <strong>HTTP 500</strong> lors de l'envoi de l'email, malgré une configuration SMTP apparemment correcte.
+        Durée de la requête observée dans les logs Railway : <strong>~10 070 ms</strong>, cohérente avec un timeout de connexion SMTP.
+      </p>
+      <h4>Diagnostic</h4>
+      <ul>
+        <li>Tentatives avec <code>SMTP_PORT=587</code> (STARTTLS, <code>SMTP_SECURE=false</code>) et <code>SMTP_PORT=465</code> (TLS, <code>SMTP_SECURE=true</code>) → même comportement.</li>
+        <li>Fournisseur SMTP : <code>mail.gandi.net</code>. Les identifiants et la boîte mail sont valides (testés hors Railway).</li>
+        <li><strong>Hypothèse confirmée :</strong> le runtime Railway filtre/bloque les connexions TCP sortantes vers les ports SMTP (587, 465), quel que soit l'hôte cible.</li>
+      </ul>
+      <h4>Contournement appliqué</h4>
+      <p>
+        Commit <code>9c731eb</code> : ajout des options <code>connectionTimeout: 10000</code> et <code>socketTimeout: 10000</code>
+        dans la configuration Nodemailer de <code>server/index.mjs</code> pour borner le hang et obtenir une erreur propre
+        plutôt qu'un timeout applicatif indéfini. Ce changement n'est pas une solution — il améliore uniquement la résilience.
+      </p>
+      <h4>Solutions recommandées</h4>
+      <table>
+        <thead><tr><th>Option</th><th>Impact code</th><th>Complexité</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Migration hébergement vers <strong>Render</strong></td>
+            <td>Aucun — mêmes variables d'env, même commandes build/start</td>
+            <td><span class="badge badge-green">Faible</span></td>
+          </tr>
+          <tr>
+            <td>Remplacer Nodemailer SMTP par une <strong>API HTTP email</strong> (Resend, Brevo, Mailgun, SendGrid)</td>
+            <td>Modification de <code>server/index.mjs</code> uniquement — logique d'envoi isolée</td>
+            <td><span class="badge badge-amber">Moyenne</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Paramètres minimaux pour migration Render : Build <code>npm ci &amp;&amp; npm run build</code>, Start <code>npm start</code>,
+      Healthcheck <code>/api/health</code>, copie des variables d'env (sauf <code>API_PORT</code>).</p>
+
+      <h3>19.2 Exposition du mot de passe SMTP</h3>
+      <div class="callout" style="border-color:var(--red);background:rgba(239,68,68,0.06)">
+        <strong>Action requise :</strong> le mot de passe SMTP Gandi a été exposé en clair lors du diagnostic (session de chat).
+        Il doit être <strong>rotaté immédiatement</strong> dans l'interface Gandi et mis à jour dans les secrets de la plateforme d'hébergement.
+      </div>
+      <p>Procédure de rotation :</p>
+      <ol>
+        <li>Se connecter à <a href="https://admin.gandi.net">admin.gandi.net</a> → Messagerie → Boîte concernée → Modifier le mot de passe.</li>
+        <li>Mettre à jour la variable <code>SMTP_PASSWORD</code> dans les secrets Railway (ou Render) — ne jamais la committer dans <code>.env</code> versionné.</li>
+        <li>Vérifier que <code>.env</code> est bien listé dans <code>.gitignore</code> (c'est le cas).</li>
+      </ol>
+
+      <h3>19.3 Canonicalisation du domaine</h3>
+      <p>
+        Le domaine canonique de production est <strong><code>https://lha-engineering.fr</code></strong> (apex, sans <code>www</code>).
+        La configuration Nginx redirige <code>https://www.lha-engineering.fr</code> → <code>https://lha-engineering.fr</code>
+        via un <code>return 301</code>.
+        Le certificat Certbot couvre les deux variantes (<code>lha-engineering.fr</code> et <code>www.lha-engineering.fr</code>)
+        grâce à la SAN du script <code>scripts/prod-init-letsencrypt.sh</code>.
+      </p>
+      <div class="callout info">
+        <strong>Cohérence SEO :</strong> la balise <code>&lt;link rel="canonical"&gt;</code> dans <code>index.html</code>
+        doit pointer vers l'apex (<code>https://lha-engineering.fr</code>), sans <code>www</code>,
+        pour éviter le contenu dupliqué.
+      </div>
+    </section>
+
     <hr class="divider" />
 
     <!-- ════════════════════ RÉFÉRENCE ════════════════════ -->
     <section id="fichiers">
-      <h2>19. Arborescence du projet</h2>
+      <h2>20. Arborescence du projet</h2>
       <pre><code>LHA-Engineering/
 ├── Dockerfile.dev           # Image dev Ubuntu 24.04 + Node 22
 ├── Dockerfile.api           # Image prod API (node:22-bookworm-slim)
@@ -831,7 +909,7 @@ make prod-certbot</code></pre>
     </section>
 
     <section id="variables">
-      <h2>20. Variables d'environnement</h2>
+      <h2>21. Variables d'environnement</h2>
       <table>
         <thead><tr><th>Variable</th><th>Défaut</th><th>Description</th></tr></thead>
         <tbody>
@@ -853,7 +931,7 @@ make prod-certbot</code></pre>
     </section>
 
     <section id="commandes">
-      <h2>21. Référence des commandes <code>make</code></h2>
+      <h2>22. Référence des commandes <code>make</code></h2>
       <table>
         <thead><tr><th>Commande</th><th>Action</th></tr></thead>
         <tbody>
@@ -878,7 +956,7 @@ make prod-certbot</code></pre>
 
     <hr class="divider" />
     <p style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding-bottom:2rem;">
-      LHA Engineering · Document technique généré le 20 avril 2026
+      LHA Engineering · Document technique · v1.1 mis à jour le 25 avril 2026
     </p>
 
   </main>

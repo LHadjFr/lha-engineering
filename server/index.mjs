@@ -1,5 +1,5 @@
 import express from 'express'
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 import { existsSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -104,9 +104,9 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`LHA contact API listening on http://0.0.0.0:${port}`)
 
   if (isMailTransportConfigured()) {
-    console.log('SMTP transport configured: contact messages will be sent by email.')
+    console.log('Email transport configured (Resend API): contact messages will be sent by email.')
   } else {
-    console.log('SMTP transport not configured: contact messages will be stored on disk.')
+    console.log('Email transport not configured: contact messages will be stored on disk.')
   }
 })
 
@@ -120,8 +120,7 @@ function isEmail(value) {
 
 function isMailTransportConfigured() {
   return Boolean(
-    process.env.SMTP_HOST &&
-      process.env.SMTP_HOST !== 'smtp.example.com' &&
+    process.env.RESEND_API_KEY &&
       process.env.SMTP_FROM &&
       process.env.CONTACT_TO,
   )
@@ -153,25 +152,12 @@ function passesRateLimit(ipAddress) {
 }
 
 async function sendEmail(payload) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true',
-    connectionTimeout: 10000,
-    socketTimeout: 10000,
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASSWORD
-        ? {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD,
-          }
-        : undefined,
-  })
+  const resend = new Resend(process.env.RESEND_API_KEY)
 
-  await transporter.sendMail({
+  const { error } = await resend.emails.send({
     from: process.env.SMTP_FROM,
     to: process.env.CONTACT_TO,
-    replyTo: payload.email,
+    reply_to: payload.email,
     subject: `[LHA Engineering] ${payload.subject}`,
     text: [
       `Nom: ${payload.name}`,
@@ -181,6 +167,10 @@ async function sendEmail(payload) {
       payload.message,
     ].join('\n'),
   })
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 async function saveSubmission(payload) {
