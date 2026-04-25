@@ -249,6 +249,11 @@
       <li><a href="#perimetre">Périmètre</a></li>
     </ul>
 
+    <div class="section-title">Démarrage</div>
+    <ul>
+      <li><a href="#guide-junior">Guide développeur</a></li>
+    </ul>
+
     <div class="section-title">Architecture</div>
     <ul>
       <li><a href="#archi-globale">Vue globale</a></li>
@@ -276,7 +281,7 @@
     <ul>
       <li><a href="#env-dev">Environnement dev</a></li>
       <li><a href="#env-prod">Environnement prod</a></li>
-      <li><a href="#smtp">Configuration SMTP</a></li>
+      <li><a href="#smtp">Configuration email</a></li>
       <li><a href="#https">HTTPS / Let's Encrypt</a></li>
     </ul>
 
@@ -298,7 +303,7 @@
 
     <h1>LHA Engineering — Spécification Technique</h1>
     <div class="meta">
-      <span>Version 1.1</span>
+      <span>Version 1.2</span>
       <span>Avril 2026</span>
       <span>Statut : <strong style="color:var(--green)">Production-ready</strong></span>
       <span>Auteur : LHA Engineering / GitHub Copilot</span>
@@ -352,9 +357,174 @@
 
     <hr class="divider" />
 
+    <!-- ════════════════════ GUIDE DÉVELOPPEUR JUNIOR ════════════════════ -->
+    <section id="guide-junior">
+      <h2>4. Prise en main pour développeur junior</h2>
+      <p>
+        Cette section explique l'essentiel pour comprendre le projet sans expérience préalable.
+        Elle répond aux questions : <em>par où commencer ?</em>, <em>comment les briques s'assemblent ?</em>
+        et <em>comment suivre le trajet d'une requête de l'écran jusqu'au serveur ?</em>
+      </p>
+
+      <h3>4.1 Glossaire des technologies</h3>
+      <table>
+        <thead><tr><th>Technologie</th><th>C'est quoi ?</th><th>Rôle dans ce projet</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>React 19</strong></td>
+            <td>Bibliothèque JavaScript pour construire des interfaces en découpant l'écran en petits morceaux réutilisables appelés <em>composants</em>. Chaque composant gère son propre état et se re-rend automatiquement quand les données changent.</td>
+            <td>Construit toutes les pages du site (accueil, labels, 404). Tous les composants sont dans <code>src/App.tsx</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>TypeScript</strong></td>
+            <td>Surcouche de JavaScript qui ajoute des types (<code>string</code>, <code>number</code>, interfaces…). Le code est converti en JavaScript par le compilateur <code>tsc</code> avant exécution. Permet de détecter les erreurs à l'écriture plutôt qu'à l'exécution.</td>
+            <td>Utilisé pour tout le code frontend (<code>src/</code>). La config est dans <code>tsconfig.json</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Vite 8</strong></td>
+            <td>Outil de développement ultrarapide avec rechargement automatique (HMR : Hot Module Replacement) quand tu modifies un fichier. En production, il « compile » et optimise tout le code en fichiers statiques dans <code>dist/</code>.</td>
+            <td>Sert le frontend en dev sur le port <code>5173</code>. Génère <code>dist/</code> pour la prod. Config dans <code>vite.config.ts</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Tailwind CSS v4</strong></td>
+            <td>Bibliothèque de classes CSS utilitaires. Au lieu d'écrire du CSS custom, on applique directement des classes comme <code>flex</code>, <code>text-lg</code>, <code>bg-slate-900</code> dans le HTML/JSX. Pas de fichier <code>tailwind.config.js</code> en v4 : configuration par import CSS direct.</td>
+            <td>Tout le style visuel des composants React. Importé dans <code>src/index.css</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>React Router v7</strong></td>
+            <td>Gère la navigation entre pages dans une SPA (Single Page Application) : quand l'URL change, React Router affiche le bon composant <strong>sans recharger la page entière</strong>. L'URL est mise à jour via l'API <code>History</code> du navigateur.</td>
+            <td>Routes <code>/</code>, <code>/labels/:labelId</code>, <code>/*</code>. Définies dans <code>src/App.tsx</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Node.js 22</strong></td>
+            <td>Environnement qui permet d'exécuter du JavaScript <strong>côté serveur</strong> (hors navigateur). Utilise le même langage que le frontend mais dans un contexte différent : accès au système de fichiers, aux ports réseau, aux variables d'environnement.</td>
+            <td>Fait tourner l'API Express (<code>server/index.mjs</code>). Format ESM (<code>.mjs</code>) aligné avec <code>"type": "module"</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Express 4</strong></td>
+            <td>Mini-framework Node.js qui simplifie la création de serveurs HTTP. Il permet de définir des <em>routes</em> (<code>app.get()</code>, <code>app.post()</code>) et des <em>middlewares</em> (fonctions qui s'exécutent à chaque requête dans l'ordre où elles sont déclarées).</td>
+            <td>Expose <code>/api/health</code> et <code>/api/contact</code>. Sert aussi les fichiers statiques en production.</td>
+          </tr>
+          <tr>
+            <td><strong>Resend</strong></td>
+            <td>Service d'envoi d'emails via une API HTTP REST. Au lieu d'ouvrir une connexion TCP/SMTP directe (souvent bloquée par les hébergeurs), on envoie une requête HTTPS à leur API qui se charge de la livraison. Nécessite un domaine expéditeur vérifié via DNS (DKIM).</td>
+            <td>Envoie les emails de contact depuis <code>server/index.mjs</code> via le SDK <code>resend</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Docker</strong></td>
+            <td>Outil qui encapsule une application et toutes ses dépendances dans un <em>conteneur</em> isolé et reproductible. Un conteneur fonctionne identiquement sur n'importe quelle machine, indépendamment de ce qui est installé dessus. Un <em>Dockerfile</em> décrit comment construire l'image.</td>
+            <td>Isole l'env de dev (<code>Dockerfile.dev</code>) et de prod (<code>Dockerfile.api</code>, <code>Dockerfile.web</code>). Zéro installation Node sur l'hôte.</td>
+          </tr>
+          <tr>
+            <td><strong>Nginx</strong></td>
+            <td>Serveur web haute performance utilisé comme <em>reverse proxy</em> : il reçoit les requêtes HTTPS entrantes et les redirige vers le bon service interne. Gère aussi la terminaison TLS (déchiffrement HTTPS) et la compression gzip.</td>
+            <td>En prod : sert les fichiers statiques React et proxie <code>/api/*</code> vers Express. Config dans <code>deploy/nginx/default.conf</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Points d'entrée du code</h3>
+      <p>Le projet a <strong>deux points d'entrée indépendants</strong>, chacun correspondant à un contexte d'exécution différent :</p>
+
+      <div class="card">
+        <div class="card-title">Frontend — <code>src/main.tsx</code></div>
+        <p>
+          Premier fichier JavaScript exécuté dans le <strong>navigateur</strong>.
+          Il « monte » l'application React dans la div <code id="root"></code> de <code>index.html</code> :
+        </p>
+        <pre><code>// src/main.tsx
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  &lt;StrictMode&gt;
+    &lt;BrowserRouter&gt;
+      &lt;App /&gt;        &lt;!-- contient tous les composants --&gt;
+    &lt;/BrowserRouter&gt;
+  &lt;/StrictMode&gt;
+)</code></pre>
+        <p>
+          <code>src/App.tsx</code> est le fichier central : il contient <strong>tous les composants React</strong> du site
+          et définit le système de routes. Les données métier (textes, labels) sont dans <code>src/site-data.ts</code>.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Backend — <code>server/index.mjs</code></div>
+        <p>
+          Unique fichier serveur, exécuté par <strong>Node.js</strong> (jamais dans le navigateur).
+          Il est lancé par <code>node server/index.mjs</code> (ou <code>npm start</code>).
+          Il réalise trois choses au démarrage :
+        </p>
+        <ol>
+          <li>Initialise Express + middlewares (<code>express.json()</code>, <code>trust proxy</code>).</li>
+          <li>Déclare les deux routes API (<code>/api/health</code>, <code>/api/contact</code>).</li>
+          <li><strong>En production uniquement :</strong> sert les fichiers statiques de <code>dist/</code> pour toutes les autres URLs (SPA fallback vers <code>index.html</code>).</li>
+        </ol>
+        <p>En développement, le service de fichiers statiques est assuré par Vite. Express ne gère que l'API.</p>
+      </div>
+
+      <h3>4.3 Cycle de vie d'une requête — formulaire de contact</h3>
+      <p>Voici ce qui se passe <strong>étape par étape</strong> quand un utilisateur soumet le formulaire :</p>
+      <div class="arch">
+1. Utilisateur clique « Envoyer » dans le navigateur
+   └─► ContactForm.handleSubmit() dans src/App.tsx
+       ├─ vérification honeypot (champ website vide ?)
+       └─ fetch('POST /api/contact', { body: JSON })
+
+2. Requête HTTP sort du navigateur
+   ├─ Dev :  Vite proxy → Express (port 8787, même conteneur)
+   └─ Prod : HTTPS → Nginx → Express (port 8787, réseau Docker)
+
+3. Express reçoit la requête — exécution de la chaîne de middleware
+   ├─ express.json()      → parse le corps JSON
+   ├─ passesRateLimit()   → max 5 req / IP / 10 min
+   ├─ honeypot check      → champ website doit être vide
+   ├─ délai check         → formStartedAt ≥ 4 000 ms avant
+   └─ validation champs   → nom, email, sujet, message requis
+
+4. Envoi email (si RESEND_API_KEY configuré)
+   ├─ sendEmail() → Resend API (HTTPS) → email livré à CONTACT_TO
+   ├─ Si succès  → { ok: true, mode: 'email' }
+   └─ Si erreur  → saveSubmission() sur disque (fallback)
+                  → { ok: true, mode: 'stored' }
+
+5. Réponse JSON retourne au navigateur
+   └─ ContactForm affiche le message de succès à l'utilisateur</div>
+
+      <h3>4.4 Architecture dév vs production</h3>
+      <table>
+        <thead><tr><th>Élément</th><th>Développement</th><th>Production</th></tr></thead>
+        <tbody>
+          <tr><td>Point d'entrée</td><td><code>npm run dev</code> (concurrently)</td><td><code>npm start</code> (node server/index.mjs)</td></tr>
+          <tr><td>Serveur frontend</td><td>Vite dev server (port 5173, HMR actif)</td><td>Nginx sert <code>dist/</code> (fichiers statiques)</td></tr>
+          <tr><td>Proxy /api</td><td>Vite proxie vers 127.0.0.1:8787</td><td>Nginx proxie vers lha-engineering-api:8787</td></tr>
+          <tr><td>Build nécessaire ?</td><td>Non — Vite compile à la volée</td><td>Oui — <code>npm run build</code> génère <code>dist/</code></td></tr>
+          <tr><td>Hot reload</td><td>Oui — HMR Vite</td><td>Non — redémarrage manuel</td></tr>
+          <tr><td>Conteneur(s)</td><td>1 seul (Ubuntu + Node)</td><td>2 (API + Web/Nginx)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.5 Conseils pratiques pour débuter</h3>
+      <ul>
+        <li><strong>Commencer par <code>src/App.tsx</code></strong> : tous les composants React sont dans ce fichier. Cherche les <code>function NomDuComposant()</code> pour repérer chaque bloc visuel.</li>
+        <li><strong>Modifier le contenu ?</strong> Aller dans <code>src/site-data.ts</code> : textes, labels, certifications. C'est là qu'on change le contenu sans toucher aux composants.</li>
+        <li><strong>Ajouter un paquet npm ?</strong> Toujours via <code>make add PKG=nom</code> (jamais <code>npm install</code> sur l'hôte — le projet tourne dans Docker).</li>
+        <li><strong>Voir les logs serveur ?</strong> Lancer <code>make dev</code> (mode interactif) plutôt que <code>make dev-d</code>. Les logs Express s'affichent dans le terminal.</li>
+        <li><strong>Modifier une variable d'env ?</strong> En dev : fichier <code>.env</code> local + redémarrer le conteneur. En prod sur Railway : onglet Variables du projet.</li>
+        <li><strong>Erreur TypeScript ?</strong> Elle apparaît dans VS Code en temps réel et bloque le build (<code>npm run build</code>). En dev, Vite reste tolérant et affiche quand même la page.</li>
+      </ul>
+
+      <div class="callout info">
+        <strong>SPA (Single Page Application) :</strong> le site ne recharge jamais la page complète lors de la navigation.
+        React Router intercepte les changements d'URL et affiche le bon composant côté client.
+        C'est pourquoi Nginx et Express renvoient toujours <code>index.html</code> pour toute URL inconnue :
+        c'est React qui prend ensuite le relais pour afficher la bonne page.
+      </div>
+    </section>
+
+    <hr class="divider" />
+
     <!-- ════════════════════ ARCHITECTURE ════════════════════ -->
     <section id="archi-globale">
-      <h2>4. Architecture globale</h2>
+      <h2>5. Architecture globale</h2>
 
       <div class="arch">
 ┌──────────────────────────────────────────────────────────────┐
@@ -387,7 +557,7 @@
     </section>
 
     <section id="frontend">
-      <h2>5. Frontend</h2>
+      <h2>6. Frontend</h2>
 
       <h3>Structure des composants</h3>
       <p>Tous les composants résident dans <code>src/App.tsx</code>. La donnée métier est centralisée dans <code>src/site-data.ts</code>.</p>
@@ -439,7 +609,7 @@
     </section>
 
     <section id="backend">
-      <h2>6. Backend API</h2>
+      <h2>7. Backend API</h2>
       <p>Fichier unique : <code>server/index.mjs</code>. Framework : Express 4. Runtime : Node 22 ESM.</p>
 
       <h3>Endpoints</h3>
@@ -481,7 +651,7 @@
     </section>
 
     <section id="infrastructure">
-      <h2>7. Infrastructure Docker</h2>
+      <h2>8. Infrastructure Docker</h2>
       <table>
         <thead><tr><th>Image</th><th>Base</th><th>Rôle</th><th>Ports exposés</th></tr></thead>
         <tbody>
@@ -520,7 +690,7 @@
 
     <!-- ════════════════════ CHOIX TECHNIQUES ════════════════════ -->
     <section id="techno-frontend">
-      <h2>8. Stack Frontend — Justification des choix</h2>
+      <h2>9. Stack Frontend — Justification des choix</h2>
 
       <div class="card">
         <div class="card-title">React 19 + TypeScript</div>
@@ -555,7 +725,7 @@
     </section>
 
     <section id="techno-backend">
-      <h2>9. Stack Backend — Justification des choix</h2>
+      <h2>10. Stack Backend — Justification des choix</h2>
 
       <div class="card">
         <div class="card-title">Node.js 22 ESM (<code>.mjs</code>)</div>
@@ -584,7 +754,7 @@
     </section>
 
     <section id="techno-infra">
-      <h2>10. Conteneurisation — Justification des choix</h2>
+      <h2>11. Conteneurisation — Justification des choix</h2>
 
       <div class="card">
         <div class="card-title">Ubuntu 24.04 pour le dev (Dockerfile.dev)</div>
@@ -617,7 +787,7 @@
 
     <!-- ════════════════════ FONCTIONNALITÉS ════════════════════ -->
     <section id="pages">
-      <h2>11. Pages et navigation</h2>
+      <h2>12. Pages et navigation</h2>
       <p>La navigation principale est assurée par <code>SiteHeader</code> via des liens hash
       (<code>/#expertise</code>, <code>/#labels</code>, <code>/#contact</code>) qui scroll
       automatiquement grâce au composant <code>ScrollManager</code>.</p>
@@ -627,7 +797,7 @@
     </section>
 
     <section id="contact">
-      <h2>12. Formulaire de contact</h2>
+      <h2>13. Formulaire de contact</h2>
       <p>Composant <code>ContactForm</code> dans <code>src/App.tsx</code>. État local contrôlé via <code>useState</code>.</p>
       <h3>Champs</h3>
       <table>
@@ -652,7 +822,7 @@
     </section>
 
     <section id="antispam">
-      <h2>13. Protection anti-spam</h2>
+      <h2>14. Protection anti-spam</h2>
       <p>Trois couches complémentaires, sans CAPTCHA ni dépendance externe :</p>
       <table>
         <thead><tr><th>Mécanisme</th><th>Où</th><th>Fonctionnement</th></tr></thead>
@@ -682,7 +852,7 @@
     </section>
 
     <section id="seo">
-      <h2>14. SEO &amp; Social</h2>
+      <h2>15. SEO &amp; Social</h2>
       <p>Métadonnées définies dans <code>index.html</code> :</p>
       <ul>
         <li><code>&lt;title&gt;</code>, <code>&lt;meta name="description"&gt;</code>, <code>&lt;meta name="robots"&gt;</code></li>
@@ -699,7 +869,7 @@
 
     <!-- ════════════════════ DÉPLOIEMENT ════════════════════ -->
     <section id="env-dev">
-      <h2>15. Environnement de développement</h2>
+      <h2>16. Environnement de développement</h2>
       <pre><code># Démarrer le serveur de dev (interactif)
 make dev
 
@@ -723,7 +893,7 @@ make stop</code></pre>
     </section>
 
     <section id="env-prod">
-      <h2>16. Environnement de production</h2>
+      <h2>17. Environnement de production</h2>
       <pre><code># Copier et renseigner le fichier d'environnement
 cp .env.example .env
 # (éditer .env avec les vraies valeurs SMTP, DOMAIN, etc.)
@@ -748,31 +918,51 @@ make prod-down</code></pre>
     </section>
 
     <section id="smtp">
-      <h2>17. Configuration SMTP (Gandi)</h2>
-      <p>Valeurs à renseigner dans <code>.env</code> pour le provider Gandi :</p>
-      <pre><code>SMTP_HOST=mail.gandi.net
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=contact@votre-domaine.tld
-SMTP_PASSWORD=mot_de_passe_boite_mail
-SMTP_FROM=LHA Engineering &lt;contact@votre-domaine.tld&gt;
-CONTACT_TO=contact@votre-domaine.tld</code></pre>
-      <p>Alternative SMTPS (TLS immédiat) :</p>
-      <pre><code>SMTP_PORT=465
-SMTP_SECURE=true</code></pre>
-      <h3>Décision de la logique d'envoi</h3>
-      <p>La fonction <code>isMailTransportConfigured()</code> dans <code>server/index.mjs</code> active
-      l'envoi SMTP uniquement si :</p>
+      <h2>18. Configuration email (Resend)</h2>
+      <p>
+        Les emails de contact sont envoyés via l'API HTTP <a href="https://resend.com">Resend</a>.
+        Plus de connexion TCP SMTP directe — une seule requête HTTPS à l'API Resend à chaque soumission.
+      </p>
+
+      <h3>Variables à configurer sur la plateforme d'hébergement (Railway)</h3>
+      <pre><code>RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
+SMTP_FROM=LHA Engineering &lt;contact@contact.lha-engineering.fr&gt;
+CONTACT_TO=contact@lha-engineering.fr</code></pre>
+
+      <div class="callout info">
+        <strong>Domaine expéditeur :</strong> l'adresse dans <code>SMTP_FROM</code> doit appartenir
+        à un domaine <strong>vérifié dans Resend</strong> (DNS DKIM validé).
+        Le domaine vérifié est <code>contact.lha-engineering.fr</code> (sous-domaine dédié aux envois).
+        <code>CONTACT_TO</code> peut rester n'importe quelle adresse.
+      </div>
+
+      <h3>Clé API Resend</h3>
       <ul>
-        <li><code>SMTP_HOST</code> est défini et différent de <code>smtp.example.com</code></li>
-        <li><code>SMTP_FROM</code> est renseigné</li>
-        <li><code>CONTACT_TO</code> est renseigné</li>
+        <li>Créer la clé dans le dashboard Resend avec le scope <strong>Sending access uniquement</strong> (pas Full access).</li>
+        <li>Ne jamais committer la clé dans le dépôt Git. La stocker uniquement dans les secrets de la plateforme (Railway : onglet Variables).</li>
+        <li>En cas de fuite, révoquer immédiatement la clé dans le dashboard Resend et en générer une nouvelle.</li>
       </ul>
-      <p>Sinon, fallback automatique sur le stockage JSON dans <code>server/submissions/</code>.</p>
+
+      <h3>Logique d'envoi dans <code>server/index.mjs</code></h3>
+      <p>La fonction <code>isMailTransportConfigured()</code> active l'envoi Resend uniquement si
+      <code>RESEND_API_KEY</code>, <code>SMTP_FROM</code> et <code>CONTACT_TO</code> sont renseignés.</p>
+      <p>En cas d'échec Resend (domaine non vérifié, quota, réseau), la soumission est automatiquement
+      sauvegardée dans <code>server/submissions/</code> — aucun lead n'est perdu.</p>
+
+      <h3>DNS Gandi configurés pour <code>contact.lha-engineering.fr</code></h3>
+      <table>
+        <thead><tr><th>Type</th><th>Nom</th><th>Contenu</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>TXT</td><td><code>resend._domainkey.contact</code></td><td>clé DKIM fournie par Resend</td><td>Authentification DKIM</td></tr>
+          <tr><td>MX</td><td><code>send.contact</code></td><td><code>feedback-smtp.*.amazonses.com</code></td><td>Retours de bounce</td></tr>
+          <tr><td>TXT</td><td><code>send.contact</code></td><td><code>v=spf1 include:*.nses.com ~all</code></td><td>Validation SPF</td></tr>
+          <tr><td>TXT</td><td><code>_dmarc</code></td><td><code>v=DMARC1; p=none;</code></td><td>Politique DMARC (optionnel)</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="https">
-      <h2>18. HTTPS &amp; Let's Encrypt</h2>
+      <h2>19. HTTPS &amp; Let's Encrypt</h2>
       <pre><code># Pré-requis : le domaine doit pointer sur le serveur (DNS A/AAAA configuré)
 # et le port 80 doit être accessible publiquement.
 
@@ -785,7 +975,7 @@ make prod-certbot</code></pre>
 
     <!-- ════════════════════ INCIDENTS ════════════════════ -->
     <section id="incidents">
-      <h2>19. Points bloquants rencontrés</h2>
+      <h2>20. Points bloquants rencontrés</h2>
       <p>Cette section documente les incidents et éléments bloquants identifiés lors du développement et du déploiement, afin d'orienter rapidement tout développeur qui reprendrait le projet.</p>
 
       <h3>19.1 SMTP sortant bloqué sur Railway (2026-04-24)</h3>
@@ -860,7 +1050,7 @@ make prod-certbot</code></pre>
 
     <!-- ════════════════════ RÉFÉRENCE ════════════════════ -->
     <section id="fichiers">
-      <h2>20. Arborescence du projet</h2>
+      <h2>21. Arborescence du projet</h2>
       <pre><code>LHA-Engineering/
 ├── Dockerfile.dev           # Image dev Ubuntu 24.04 + Node 22
 ├── Dockerfile.api           # Image prod API (node:22-bookworm-slim)
@@ -909,18 +1099,14 @@ make prod-certbot</code></pre>
     </section>
 
     <section id="variables">
-      <h2>21. Variables d'environnement</h2>
+      <h2>22. Variables d'environnement</h2>
       <table>
         <thead><tr><th>Variable</th><th>Défaut</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>API_PORT</code></td><td>8787</td><td>Port d'écoute de l'API Express</td></tr>
           <tr><td><code>CONTACT_TO</code></td><td>—</td><td>Adresse email de réception des formulaires</td></tr>
-          <tr><td><code>SMTP_HOST</code></td><td>—</td><td>Serveur SMTP sortant (<code>mail.gandi.net</code> pour Gandi)</td></tr>
-          <tr><td><code>SMTP_PORT</code></td><td>587</td><td>Port SMTP (<code>587</code> STARTTLS ou <code>465</code> TLS)</td></tr>
-          <tr><td><code>SMTP_SECURE</code></td><td>false</td><td><code>true</code> pour TLS immédiat (port 465), <code>false</code> pour STARTTLS (port 587)</td></tr>
-          <tr><td><code>SMTP_USER</code></td><td>—</td><td>Identifiant SMTP (adresse email complète)</td></tr>
-          <tr><td><code>SMTP_PASSWORD</code></td><td>—</td><td>Mot de passe SMTP</td></tr>
-          <tr><td><code>SMTP_FROM</code></td><td>—</td><td>Adresse expéditrice affichée (<code>Nom &lt;adresse&gt;</code>)</td></tr>
+          <tr><td><code>RESEND_API_KEY</code></td><td>—</td><td>Clé API Resend (scope Sending only). Active l'envoi email si renseignée.</td></tr>
+          <tr><td><code>SMTP_FROM</code></td><td>—</td><td>Adresse expéditrice affichée (<code>Nom &lt;adresse@contact.lha-engineering.fr&gt;</code>). Doit appartenir au domaine vérifié dans Resend.</td></tr>
           <tr><td><code>CONTACT_MIN_SUBMIT_TIME_MS</code></td><td>4000</td><td>Délai minimal avant soumission (anti-spam)</td></tr>
           <tr><td><code>CONTACT_RATE_LIMIT_WINDOW_MS</code></td><td>600000</td><td>Fenêtre de rate limiting en ms (10 min)</td></tr>
           <tr><td><code>CONTACT_RATE_LIMIT_MAX</code></td><td>5</td><td>Nombre max de soumissions par IP par fenêtre</td></tr>
@@ -931,7 +1117,7 @@ make prod-certbot</code></pre>
     </section>
 
     <section id="commandes">
-      <h2>22. Référence des commandes <code>make</code></h2>
+      <h2>23. Référence des commandes <code>make</code></h2>
       <table>
         <thead><tr><th>Commande</th><th>Action</th></tr></thead>
         <tbody>
@@ -956,7 +1142,7 @@ make prod-certbot</code></pre>
 
     <hr class="divider" />
     <p style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding-bottom:2rem;">
-      LHA Engineering · Document technique · v1.1 mis à jour le 25 avril 2026
+      LHA Engineering · Document technique · v1.2 mis à jour le 25 avril 2026
     </p>
 
   </main>
