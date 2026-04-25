@@ -73,8 +73,29 @@ app.post('/api/contact', async (req, res) => {
 
   try {
     if (isMailTransportConfigured()) {
-      await sendEmail(payload)
-      return res.json({ ok: true, mode: 'email' })
+      try {
+        await sendEmail(payload)
+        return res.json({ ok: true, mode: 'email' })
+      } catch (error) {
+        const errorMessage = getErrorMessage(error)
+        console.error('Email send failed, falling back to local storage:', errorMessage)
+
+        if (errorMessage.includes('domain is not verified')) {
+          console.error('Resend domain is not verified. Verify DNS records in Resend before using a custom sender domain.')
+        }
+
+        await saveSubmission({
+          ...payload,
+          deliveryFallback: true,
+          deliveryError: errorMessage,
+        })
+
+        return res.json({
+          ok: true,
+          mode: 'stored',
+          warning: 'Envoi email temporairement indisponible. Message enregistré côté serveur.',
+        })
+      }
     }
 
     await saveSubmission(payload)
@@ -186,4 +207,12 @@ function slugify(value) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48)
+}
+
+function getErrorMessage(error) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return String(error)
 }
